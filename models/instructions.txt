@@ -1,0 +1,17 @@
+Authors Note: I am only human after all, and thus I am lazy. 
+
+The decoded labels do not actually have the beautiful names you see in the JSON encodings. 
+When you train the models on the data the class names come out ugly.
+So I hard coded the beautiful mappins. Below are the mappings of all the encodings.
+
+CWRU Dataset encoding mappings:
+    ["B", "IR", "N", "OR"] = ["Ball Fault", "Inner Race Fault", "Healthy", "Outer Race Fault"]
+
+MAFAULDA Dataset encoding mappings:
+    ["ball", "cage", "normal", "outer"] = ["Ball Fault", "Cage Fault", "Healthy", "Outer Race Fault"]
+
+Triaxial Dataset encoding mappings:
+    ["Healthy", "Inner", "Outer"] = ["Healthy", "Inner Race Fault", "Outer Race Fault"]
+
+Indeed in retrospect I could have made these mappings in the preprocessing file, but I'm tired boss. 
+Although I doubt anyone will do this, but feel free to implement a mapping system.

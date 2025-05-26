@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EssPee - IFD Transfer Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-200 min-h-screen px-6 py-6">
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-light tracking-tight text-gray-900 mb-4">Transfer Learning</h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Adapting pre-trained models for improved fault detection across different bearing datasets</p>
+        </div>
+        <div class="bg-gray-50 rounded-lg shadow-md border border-gray-100 p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">About Transfer Learning</h2>
+            <p class="text-gray-600 text-justify mb-4">
+                This transfer learning demo tackles a major barrier in predictive maintenance: the lack of failure data. 
+                While neural networks offer strong potential, only 20-30% of large companies use them for predictive maintenance—mostly because you can't just let motors fail to collect training data. 
+                My approach solves this by pretraining models in a controlled lab environment (where faulty motors can run), then adapting them to real-world data using only a small amount of priming data. 
+                The method freezes the middle layers of the model—responsible for domain-generic feature extraction—and retrains the first and final layers to adapt to the new domain. 
+                Think of it like a sandwich: domain adaptation at the start, shared knowledge in the middle, and domain-specific classification at the end. 
+                This approach achieved ~77% accuracy using just 1% of the dataset, with a 5.69% performance boost over training from scratch.
+                <br class="mb-3">
+                Obviously, this demonstration and my work is not plug-and-play. What this demo serves to show is the potential of smart engineering techniques as a stepping stone to more advanced predictive maintenance using deep learning. 
+                If you tried previous full dataset demos, you'll see that the transfer learning implementation is notably less accurate than the models trained on full datasets.
+                <br class="mb-3">
+                This model was pretrained on the CWRU dataset and then adapted to the Triaxial dataset, the lowest quality dataset of the three.
+            </p>
+            <img src="{{ url_for('static', filename='images/transfer_learning_graph.jpg') }}" alt="Transfer Learning Graph" class="w-1/4 h-auto mx-auto rounded-md shadow-sm border border-gray-300" alt="CWRU Testing Rig">
+            <p class="text-xs text-gray-600 text-center mb-3">(Graph depicting how an engineer would select transfer learning technique based on dataset dissimilarity)</p>
+            <p class="text-gray-600 text-justify">
+                Below you can find an interactive demo to evaluate the transfer learning model's performance. When you select a sample, 
+                you're shown the signal, the type of fault it has, and what the model predicts.
+            </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Panel: Sample Data Table -->
+            <div class="bg-gray-50 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Available Samples</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sample</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for sample_num, label in samples %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    Sample {{ sample_num }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ label }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <button onclick="predictSample('{{ sample_num }}')" 
+                                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded transition duration-300">
+                                        Predict
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Panel: Prediction Display -->
+            <div class="flex flex-col gap-8 bg-gray-50 rounded-lg shadow-md p-6 h-full">
+                <div class="flex-1">
+                    <h2 class="text-xl font-semibold mb-4">Prediction Results</h2>
+                    <div id="predictionResult" class="hidden h-full">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-medium text-gray-700">Selected Sample: <span id="selectedSamplePrediction" class="font-bold"></span></h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="p-4 rounded-lg" id="predictionBox">
+                                <h4 class="font-medium mb-2">Model Prediction</h4>
+                                <p id="predictionValue" class="text-2xl font-bold"></p>
+                            </div>
+                            <div class="p-4 rounded-lg" id="actualBox">
+                                <h4 class="font-medium mb-2">Actual Label</h4>
+                                <p id="actualValue" class="text-2xl font-bold"></p>
+                            </div>
+                        </div>
+                        <div class="p-4 rounded-lg" id="resultBox">
+                            <h4 class="font-medium mb-2">Result</h4>
+                            <p id="resultText" class="text-lg"></p>
+                        </div>
+                    </div>
+                    <div id="noPredictionSelection" class="text-center text-gray-500 h-full flex items-center justify-center">
+                        Select a sample from the table to see predictions
+                    </div>
+                    <div id="predictionLoadingState" class="hidden h-full flex flex-col items-center justify-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                        <p class="text-gray-600">Processing prediction...</p>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-semibold mb-4">Signal Preview</h2>
+                    <div id="signalPreview" class="hidden h-full">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-medium text-gray-700">Selected Sample: <span id="selectedSampleSignal" class="font-bold"></span></h3>
+                        </div>
+                        <img id="signalImage" src="data:image/png;base64,{{ plot }}" alt="Signal Preview" class="w-full h-auto rounded-lg shadow-sm border border-gray-300">
+                    </div>
+                    <div id="noSignalSelection" class="text-center text-gray-500 h-full flex items-center justify-center">
+                        Select a sample from the table to see its signal
+                    </div>
+                    <div id="signalLoadingState" class="hidden h-full flex flex-col items-center justify-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                        <p class="text-gray-600">Generating signal plot...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{{ url_for('index') }}" class="text-gray-500 underline"><p class="text-center mt-4">Back to landing</p></a>
+        
+    </div>
+    <script>
+        async function predictSample(sample_num) {
+            try {
+                // Show loading states
+                document.getElementById('signalLoadingState').classList.remove('hidden');
+                document.getElementById('predictionLoadingState').classList.remove('hidden');
+                document.getElementById('signalPreview').classList.add('hidden');
+                document.getElementById('predictionResult').classList.add('hidden');
+                document.getElementById('noSignalSelection').classList.add('hidden');
+                document.getElementById('noPredictionSelection').classList.add('hidden');
+                
+                console.log(typeof sample_num, sample_num)
+                const response = await fetch(`/predict/transfer/${sample_num}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                // Hide loading states
+                document.getElementById('signalLoadingState').classList.add('hidden');
+                document.getElementById('predictionLoadingState').classList.add('hidden');
+
+                // Display signal preview
+                document.getElementById('signalPreview').classList.remove('hidden');
+                
+                // Show prediction result
+                document.getElementById('predictionResult').classList.remove('hidden');
+                
+                // Update UI
+                document.getElementById('selectedSampleSignal').textContent = `${sample_num}`;
+                document.getElementById('selectedSamplePrediction').textContent = `${sample_num}`;
+                document.getElementById('signalImage').src = `data:image/png;base64,${data.plot}`;
+                
+                document.getElementById('predictionValue').textContent = data.prediction;
+                document.getElementById('actualValue').textContent = data.label;
+                
+                // Set colors based on match
+                const predictionBox = document.getElementById('predictionBox');
+                const actualBox = document.getElementById('actualBox');
+                const resultBox = document.getElementById('resultBox');
+                
+                if (data.prediction === data.label) {
+                    predictionBox.className = 'p-4 rounded-lg bg-green-100';
+                    actualBox.className = 'p-4 rounded-lg bg-green-100';
+                    resultBox.className = 'p-4 rounded-lg bg-green-100';
+                    document.getElementById('resultText').textContent = 'Model Predicted Correctly!';
+                } else {
+                    predictionBox.className = 'p-4 rounded-lg bg-red-100';
+                    actualBox.className = 'p-4 rounded-lg bg-red-100';
+                    resultBox.className = 'p-4 rounded-lg bg-red-100';
+                    document.getElementById('resultText').textContent = 'Model Predicted Incorrectly!';
+                }
+            } catch (error) {
+                // Hide loading states on error
+                document.getElementById('signalLoadingState').classList.add('hidden');
+                document.getElementById('predictionLoadingState').classList.add('hidden');
+                console.error('Error:', error);
+                alert('An error occurred while making the prediction: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
