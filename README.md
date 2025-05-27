@@ -32,7 +32,7 @@ Traditional fault detection methods rely on computationally intensive preprocess
 │   ├── tri_model.h5    # TRI dataset model
 │   ├── transfer_model.h5 # Transfer learning model
 │   ├── [dataset]_encoding.json files # Label encodings
-|   └── [dataset_samples.npz files # Testing samples
+│   └── [dataset_samples.npz] files # Testing samples
 └── playground/         # Development and experimentation files
     ├── training.py     # Main training script
     ├── tf_training.py  # Transfer learning implementation
@@ -67,7 +67,7 @@ This project leverages a meticulously designed 1D Convolutional Neural Network (
 
 The 1D-CNN is built with three convolutional blocks, each designed to extract hierarchical features from raw vibrational signals. Each block consists of a 1D convolution layer with a kernel size of 9—chosen to capture long-term time and frequency features, ensuring robustness against short-term noise—followed by ReLU activation and max-pooling (pool size of 2) to reduce dimensionality while preserving critical patterns. The blocks use descending filter sizes (128, 64, 32) to progressively capture low-level features (e.g., raw signal patterns) in the first block and higher-level abstractions (e.g., fault-specific signatures) in later blocks. This is followed by a flatten layer and two dense blocks with 32 and 16 neurons, respectively, each with ReLU activation and dropout (probabilities of 0.4 and 0.2) to mitigate overfitting. The lightweight architecture, combined with strategic downsampling of high-frequency datasets, ensures a compact model size and inference times under 100ms on a 0.5 CPU Render server, ideal for edge deployment.
 
-[Placeholder for Model Architecture Diagram]
+![Placeholder for Model Architecture Diagram](readme_resources/model_architecture.png "Model Architecture")
 
 ### Input and Output
 
@@ -81,9 +81,23 @@ Collecting faulty motor data in industrial settings is notoriously challenging, 
 
 The model was evaluated on three well-known datasets—CWRU, MAFAULDA, and Triaxial—using an 80-20 train-test split. Across all datasets, it achieved >98% test accuracy when trained on full datasets, demonstrating exceptional robustness. Performance was visualized using confusion matrices to analyze classification accuracy across fault types, revealing consistent performance even on the noisy Triaxial dataset.
 
-[Placeholder for Confusion Matrices]
+#### CWRU Confusion Matrix
+
+![Placeholder for CWRU Confusion Matrix](readme_resources/cwru_confmat.png "CWRU Confusion Matrix")
+
+#### Triaxial Confusion Matrix
+
+![Placeholder for Triaxial Confusion Matrix](readme_resources/triaxial_confmat.png "Triaxial Confusion Matrix")
+
+#### MAFAULDA Confusion Matrix
+
+![Placeholder for MAFAULDA Confusion Matrix](readme_resources/mafaulda_confmat.png "MAFAULDA Confusion Matrix")
 
 Compared to four published academic models (including DNNs, 2D-CNNs, and other 1D-CNNs), this model either matches or exceeds performance, outperforming competing 1D-CNNs by approximately 7% in test accuracy while requiring simpler preprocessing. Inference was tested on a 0.5 CPU Render server with limited RAM, confirming <100ms inference times, making it suitable for resource-constrained environments. Training was conducted on a GPU to handle computational demands, but the model’s lightweight design ensures deployment feasibility on low-power devices. Plans for a TensorFlow Lite version are in progress to further optimize inference for edge devices like Raspberry Pi or NVIDIA Jetson.
+
+|                       | My 1D-CNN | FaultNet | LiteCNN | Spectra DNN | Compact Adaptive 1D CNN | 
+| :-------------------: | :-------: | :------: | :-----: | :---------: | :---------------------: | 
+| CWRU Dataset Accuracy | 100%      | 98.5%    | 100%    | 100%        | 93.5%                   |
 
 ### Practical Implementation and Challenges
 
@@ -153,4 +167,20 @@ The application is configured to run with Gunicorn in production with the follow
 
 ## Acknowledgments
 
-[To be added: Credits and acknowledgments] 
+This work would not have been possible, if not for the previous work of the following authors and institutions.
+
+1. “Bearing Data Center: Case School of Engineering: Case Western Reserve University,” Case School of Engineering, https://engineering.case.edu/bearingdatacenter.
+
+2. “Mafaulda,” MAFAULDA :: Machinery Fault Database, https://www02.smt.ufrj.br/~offshore/mfs/page_01.html.
+
+3. D. Kumar, S. Mehran, M. Z. Shaikh, M. Hussain, B. S. Chowdhry, and T. Hussain, "Triaxial Bearing Vibration Dataset of Induction Motor under Varying Load Conditions," Mendeley Data, V2, 2022. DOI: 10.17632/fm6xzxnf36.2.
+
+4.	R. Magar, L. Ghule, J. Li, Y. Zhao and A. B. Farimani, "FaultNet: A Deep Convolutional Neural Network for Bearing Fault Classification," in IEEE Access, vol. 9, pp. 25189-25199, 2021, doi: 10.1109/ACCESS.2021.3056944
+
+5.	Y. Yoo, H. Jo, and S.-W. Ban, "Lite and Efficient Deep Learning Model for Bearing Fault Diagnosis Using the CWRU Dataset," Sensors, vol. 23, no. 6, p. 3157, 2023. DOI: 10.3390/s23063157.
+
+6.	Y. Yang, P. Fu and Y. He, "Bearing Fault Automatic Classification Based on Deep Learning," in IEEE Access, vol. 6, pp. 71540-71554, 2018, doi: 10.1109/ACCESS.2018.2880990.
+
+7.	L. Eren, T. Ince, and S. Kiranyaz, "A Generic Intelligent Bearing Fault Diagnosis System Using Compact Adaptive 1D CNN Classifier," J Sign Process Syst, vol. 91, pp. 179-189, 2019. doi: 10.1007/s11265-018-1378-3.
+
+After all it is their work that anchored mine, or served as competition.
